@@ -3,15 +3,17 @@
 ![Easymenu screen example](https://github.com/davervw/easymenu64/raw/master/easymenu.png)
 
 Easymenu is a utility for Commodore 64 to display disk directory in a 2-up,
-multi-page display allowing the user to select a program with curosr keys 
+multi-page display allowing the user to select a program with cursor keys 
 or joystick(#2).  It supports loading BASIC programs normally saved with
 low byte offset 1, and machine language programs saved at other offsets.
-If the program identifies as a cartridge with autostart, the system soft
-resets JMP ($FFFC) and will then auto-start.
+The BASIC program will automatically be RUN, and the machine language program
+will start with a JMP to its initial address.  If the program identifies as 
+a cartridge with autostart, the system soft resets JMP ($FFFC) to activate the
+cartridge.
 
 Easymenu resides at $C000-$C6FF temporarily using $C700 onward for directory
-listings on demand.  If it is not overwritten, the user may return to a
-directory listing using SYS 49152
+listings on demand.  If the program is not overwritten, the user may return
+using SYS 49152
 
 Demo usage:
 
