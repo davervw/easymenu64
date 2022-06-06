@@ -71,7 +71,7 @@ entry:
     sta $58
 
     lda #$ff
-    sta $c6f6
+    sta num_files
 
     jsr clrchn
     jsr clall
@@ -95,7 +95,7 @@ entry:
     jsr chrin
     jsr ret_to_parent_if_err
 
---  lda $c6f6
+--  lda num_files
     cmp #0
     bne +
     jsr draw_screen
@@ -158,7 +158,7 @@ entry:
     lda $58
     adc #0
     sta $58
-    inc $c6f6
+    inc num_files
     jmp --
 
 --  jsr clrchn
@@ -232,7 +232,7 @@ ret_to_parent_if_err
 +++ jsr clrchn
     lda #$01
     jsr close
-    lda $c6f6
+    lda num_files
     bne ++
     ldx #<no_files
     ldy #>no_files
@@ -255,10 +255,10 @@ errkey
     jmp go_drive
 
 ++  lda #0
-    sta $c6f7
+    sta page_index
     jsr display_dir_page
     ldx #0
-    stx $c6f9
+    stx cursor_index
 
 drawthenkey
     jsr draw_names
@@ -282,8 +282,8 @@ checkkey
 
     lda $dc00 ; joystick2
     and #$1f
-    cmp $c6fa
-    sta $c6fa
+    cmp joy2_last
+    sta joy2_last
     bne --
     and #$01 ; up
     bne +
@@ -313,39 +313,39 @@ checkkey
     bne checkkey
     lda #$0d ; enter
 
-++  ldx $c6f9
+++  ldx cursor_index
     cmp #$11 ; down
     bne ++
     cpx #41 ; off page?
     beq +
     sec
-    lda $c6f8
+    lda files_rem
     sbc #$01
-    cmp $c6f9
+    cmp cursor_index
     beq checkkey
     jsr draw_names
-    inc $c6f9
+    inc cursor_index
     jmp drawthenkey
 +   clc
-    lda $c6f9
+    lda cursor_index
     adc #$01
-    cmp $c6f8
+    cmp files_rem
     bcc +
     jmp checkkey
 +   lda #0
-    sta $c6f9
+    sta cursor_index
     clc
-    lda $c6f7
+    lda page_index
     adc #$2a
-    sta $c6f7
+    sta page_index
     jsr display_dir_page
     jmp drawthenkey
 
 ++  cmp #$13 ; home
     bne +
     ldx #0
-    stx $c6f7
-    stx $c6f9
+    stx page_index
+    stx cursor_index
     jsr display_dir_page
     jmp drawthenkey
 
@@ -354,16 +354,16 @@ checkkey
     cpx #0
     beq +
     jsr draw_names
-    dec $c6f9
+    dec cursor_index
     jmp drawthenkey
-+   lda $c6f7
++   lda page_index
     bne +
     jmp checkkey
 +   sec
     sbc #$2a
-    sta $c6f7
+    sta page_index
     lda #$29
-    sta $c6f9
+    sta cursor_index
     jsr display_dir_page
     jmp drawthenkey
 
@@ -374,9 +374,9 @@ checkkey
     jmp checkkey
 +   jsr draw_names
     sec
-    lda $c6f9
+    lda cursor_index
     sbc #$15
-    sta $c6f9
+    sta cursor_index
     jmp drawthenkey
 
 ++  cmp #$1d ; right
@@ -386,11 +386,11 @@ checkkey
     jmp checkkey
 +   jsr draw_names
     clc
-    lda $c6f9
+    lda cursor_index
     adc #$15
-    cmp $c6f8
+    cmp files_rem
     bcs +
-    sta $c6f9
+    sta cursor_index
 +   jmp drawthenkey
 
 ++  cmp #' '
@@ -442,8 +442,8 @@ ctlrc_handler
     lda #>start
     sta $5c
     lda #$5b
-    ldx #<end_program
-    ldy #>end_program
+    ldx #<num_files ; end of program to save
+    ldy #>num_files ; end of program to save
     jsr savefile
     jsr ret_to_parent_if_err
     jmp start
@@ -500,8 +500,8 @@ load_selection
     sta $59
 
 +   clc
-    lda $c6f7
-    adc $c6f9
+    lda page_index
+    adc cursor_index
     tax
     lda #<buffer
     sta $57
@@ -651,7 +651,7 @@ draw_names
     sta $57
     lda #$04
     sta $58
-    ldx $c6f9
+    ldx cursor_index
     cpx #$15
     bcc +
     clc
@@ -750,18 +750,18 @@ draw_screen
 
 display_dir_page
     sec
-    lda $c6f6
-    sbc $c6f7
-    sta $c6f8
+    lda num_files
+    sbc page_index
+    sta files_rem
 
-; multiply $c6f7 by 16, store result in $57/$58
+; multiply page_index by 16, store result in $57/$58
     clc
     lda #0
     sta $57
     sta $58
     ldx #16
 -   lda $57
-    adc $c6f7
+    adc page_index
     sta $57
     lda $58
     adc #0
@@ -793,7 +793,7 @@ display_dir_page
 
 +   ldy #0
 -   lda ($57),y
-    cpx $c6f8
+    cpx files_rem
     bcc +
     lda #' '
 +   jsr display_char
@@ -827,7 +827,7 @@ display_dir_page
     rts
 
 display_char
-    bit $c6f1
+    bit ctlr_char
     bne +
     pha
     lda #$12 ; rvs
@@ -915,6 +915,7 @@ program_name
     !text "EASYMENU"
     !byte 0
 
+ctlr_char ; non-zero displays as inverse petascii (intended use, unused in original)
     !byte $60
     
 bg_choice
@@ -929,6 +930,10 @@ fg_choice
 devicenum
     !byte 8
 
-end_program=* ; $c6f6
+num_files=* ; 0..254 number of files loaded from directory (255=not loaded)
+page_index=num_files+1 ; directory index (starts at zero) of first filename shown on screen
+files_rem=page_index+1 ; number of filenames on current screen and any further screens
+cursor_index=files_rem+1 ; index of current selection (top left starts at zero, top right starts at 21)
+joy2_last=cursor_index+1 ; last joystick read, for detecting changes
 
-buffer = $c6fb ; how big?
+buffer = joy2_last+1 ; how big?
