@@ -12,6 +12,4 @@ write build/${PROGRAM}.prg "${PROGRAM}"
 write code/${PROGRAM}.asm ${PROGRAM}.asm,s
 write LICENSE license,s
 EOF
-cp code/${PROGRAM}.asm /c/Users/Dave/SkyDrive/C64/DaveDisks/raw_files/${PROGRAM}2.asm
-[ $? -eq 0 ] && cp build/${PROGRAM}.d64 /c/Users/Dave/Dropbox/Commodore/
 [ $? -eq 0 ] && ${VICE}/x64.exe -moncommands build/labels build/${PROGRAM}.d64
