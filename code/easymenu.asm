@@ -132,6 +132,8 @@ entry:
     jsr ret_to_parent_if_err
     cmp #$22 ; double quote
     beq +
+    cpy #16
+    bcs -
     sta ($57),y
     iny
     bne -
@@ -159,7 +161,11 @@ entry:
     adc #0
     sta $58
     inc num_files
+    lda num_files
+    cmp #max_files
+    beq +
     jmp --
++   jmp +++
 
 --  jsr clrchn
     lda #$01
@@ -936,4 +942,5 @@ files_rem=page_index+1 ; number of filenames on current screen and any further s
 cursor_index=files_rem+1 ; index of current selection (top left starts at zero, top right starts at 21)
 joy2_last=cursor_index+1 ; last joystick read, for detecting changes
 
-buffer = joy2_last+1 ; how big?
+buffer = joy2_last+1
+max_files = ($d000-buffer)/16
