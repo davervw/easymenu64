@@ -734,7 +734,7 @@ draw_screen
     ldy #>down_right_rvs
     jsr strout
     ldx #0
--   lda $c6fb,x
+-   lda buffer,x
     jsr display_char
     inx
     cpx #16
