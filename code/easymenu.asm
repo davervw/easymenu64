@@ -33,7 +33,7 @@ jmp entry
 
 *=$c01c
 
-; copy 7 full pages from BASIC RAM to destination (program + extraneous)
+; copy full pages from BASIC RAM to destination (program + extraneous)
     lda $2b
     sta $5b
     lda $2c
@@ -42,7 +42,7 @@ jmp entry
     sta $57
     lda #>start
     sta $58
-    ldx #$07
+    ldx #num_pages
     ldy #0
 -   lda ($5b),y
     sta ($57),y
@@ -935,6 +935,7 @@ fg_choice
 
 devicenum
     !byte 8
+;end of binary program ---------------------------------------------------
 
 num_files=* ; 0..254 number of files loaded from directory (255=not loaded)
 page_index=num_files+1 ; directory index (starts at zero) of first filename shown on screen
@@ -944,3 +945,4 @@ joy2_last=cursor_index+1 ; last joystick read, for detecting changes
 
 buffer = joy2_last+1
 max_files = ($d000-buffer)/16
+num_pages = (num_files-start+255)/256
